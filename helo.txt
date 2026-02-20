@@ -1,0 +1,175 @@
+--// REMOVE OLD
+pcall(function()
+    game.CoreGui:FindFirstChild("ChiiGodMenu"):Destroy()
+end)
+
+--// SERVICES
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+--// SETTINGS
+_G.AutoFarm = false
+_G.AutoQuest = false
+_G.FastAttack = false
+_G.BringMob = false
+_G.GodMode = false
+_G.Height = 12
+
+--// ANTI AFK
+player.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+    wait(1)
+    VirtualUser:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+end)
+
+--// SAFE CHARACTER
+local function GetChar()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
+local function Alive()
+    local c = GetChar()
+    return c and c:FindFirstChild("Humanoid") and c.Humanoid.Health > 0
+end
+
+--// FIND MOB
+local function GetMob()
+    for _,v in pairs(workspace.Enemies:GetChildren()) do
+        if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+            return v
+        end
+    end
+end
+
+--// AUTO QUEST (CƠ BẢN SEA 1)
+spawn(function()
+    while task.wait(1) do
+        if _G.AutoQuest and Alive() then
+            pcall(function()
+                if not player.PlayerGui:FindFirstChild("QuestGUI") then
+                    ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest","BanditQuest1",1)
+                end
+            end)
+        end
+    end
+end)
+
+--// AUTO FARM
+spawn(function()
+    while task.wait(0.1) do
+        if _G.AutoFarm and Alive() then
+            pcall(function()
+                local mob = GetMob()
+                local char = GetChar()
+                if mob and mob:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame =
+                        mob.HumanoidRootPart.CFrame * CFrame.new(0,_G.Height,0)
+                end
+            end)
+        end
+    end
+end)
+
+--// BRING MOB
+spawn(function()
+    while task.wait(0.2) do
+        if _G.BringMob and Alive() then
+            pcall(function()
+                local char = GetChar()
+                for _,v in pairs(workspace.Enemies:GetChildren()) do
+                    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                        v.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0,0,-5)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+--// FAST ATTACK
+spawn(function()
+    while task.wait(0.15) do
+        if _G.FastAttack and Alive() then
+            pcall(function()
+                local tool = player.Character:FindFirstChildOfClass("Tool")
+                if tool then tool:Activate() end
+            end)
+        end
+    end
+end)
+
+--// GOD MODE
+spawn(function()
+    while task.wait(0.5) do
+        if _G.GodMode and Alive() then
+            pcall(function()
+                local hum = GetChar().Humanoid
+                hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
+                hum:ChangeState(11)
+            end)
+        end
+    end
+end)
+
+--// ================= UI =================
+
+local ScreenGui = Instance.new("ScreenGui",game.CoreGui)
+ScreenGui.Name = "ChiiGodMenu"
+
+local Open = Instance.new("TextButton",ScreenGui)
+Open.Size = UDim2.new(0,60,0,60)
+Open.Position = UDim2.new(0.05,0,0.4,0)
+Open.Text = "GOD"
+Open.TextScaled = true
+Open.BackgroundColor3 = Color3.fromRGB(170,0,0)
+Open.TextColor3 = Color3.new(1,1,1)
+Open.Draggable = true
+Instance.new("UICorner",Open).CornerRadius = UDim.new(1,0)
+
+local Main = Instance.new("Frame",ScreenGui)
+Main.Size = UDim2.new(0,270,0,330)
+Main.Position = UDim2.new(0.35,0,0.25,0)
+Main.BackgroundColor3 = Color3.fromRGB(15,15,15)
+Main.Visible = false
+Main.Draggable = true
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,12)
+
+local Title = Instance.new("TextLabel",Main)
+Title.Size = UDim2.new(1,0,0,40)
+Title.BackgroundTransparency = 1
+Title.Text = "🔥 CHII GOD VERSION 🔥"
+Title.TextColor3 = Color3.fromRGB(255,0,0)
+Title.TextScaled = true
+
+local function Toggle(name,posY,func)
+    local Btn = Instance.new("TextButton",Main)
+    Btn.Size = UDim2.new(0.9,0,0,40)
+    Btn.Position = UDim2.new(0.05,0,0,posY)
+    Btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    Btn.TextColor3 = Color3.new(1,1,1)
+    Btn.TextScaled = true
+    Btn.Text = name.." : OFF"
+    Instance.new("UICorner",Btn).CornerRadius = UDim.new(0,8)
+
+    local state = false
+    Btn.MouseButton1Click:Connect(function()
+        state = not state
+        Btn.Text = name.." : "..(state and "ON" or "OFF")
+        Btn.BackgroundColor3 = state and Color3.fromRGB(170,0,0) or Color3.fromRGB(40,40,40)
+        func(state)
+    end)
+end
+
+Toggle("Auto Farm",50,function(v) _G.AutoFarm=v end)
+Toggle("Auto Quest",100,function(v) _G.AutoQuest=v end)
+Toggle("Fast Attack",150,function(v) _G.FastAttack=v end)
+Toggle("Bring Mob",200,function(v) _G.BringMob=v end)
+Toggle("GOD Mode",250,function(v) _G.GodMode=v end)
+
+Open.MouseButton1Click:Connect(function()
+    Main.Visible = not Main.Visible
+end)
